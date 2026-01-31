@@ -1,10 +1,13 @@
-# Prime Plot
+# Prime_Plot_AI
 
 Python tool for visualizing prime number patterns and detecting primes using machine learning. Features evolutionary discovery of optimal visualization parameters and visualization-guided prime search.
 
+**Repository:** [github.com/rondidon/Prime_Plot_AI](https://github.com/rondidon/Prime_Plot_AI)
+
 ## Features
 
-- **Multiple Visualization Methods**: Ulam spiral, Sacks spiral, Klauber triangle, Vogel spiral, Fibonacci spirals, modular arithmetic plots
+- **33 Visualization Methods**: Ulam spiral, Sacks spiral, Klauber triangle, Vogel spiral, Fibonacci spirals, modular arithmetic plots, plus novel and predictive visualizations
+- **Visual Pattern Analysis**: Detects diagonal/curved patterns, removes known mathematical structure, generates comparison mosaics
 - **Evolutionary Discovery**: Genetic algorithm to discover optimal visualization parameters
 - **ML-Based Detection**: U-Net models trained to identify prime patterns
 - **Visualization-Guided Search**: Use learned patterns to find primes more efficiently
@@ -45,6 +48,49 @@ python -m prime_plot.cli modular --max-n 100000 --type clock --modulus 30 --outp
 python -m prime_plot.cli vogel --max-n 100000 --scaling sqrt --output vogel.png
 ```
 
+### Visual Pattern Analysis
+
+Analyze prime visualizations to detect and remove known mathematical structure:
+
+```bash
+# Run full visual analysis with all 33 methods
+python run_visual_analysis.py --max-n 50000 --image-size 500
+
+# Quick analysis
+python run_visual_analysis.py --max-n 20000 --no-extension --no-efficiency
+```
+
+**Output includes:**
+- `mosaic_visualizations.png` - All methods sorted by quality (best top-left)
+- `mosaic_residuals.png` - Residuals after removing known patterns
+- `{method}_known_patterns.png` - Known structure marked in RED
+- `{method}_residual.png` - Primes remaining after pattern removal
+- `{method}_comparison.png` - 3-panel: original | marked | residual
+
+### Autonomous Discovery Engine
+
+Run continuous discovery of novel N-dimensional visualizations:
+
+```bash
+# Run for 8 hours exploring 2D, 3D, and 4D visualizations
+python run_autonomous_discovery.py --hours 8 --dimensions 2,3,4
+
+# Run for 1000 cycles
+python run_autonomous_discovery.py --cycles 1000 --dimensions 2,3
+
+# Quick test run
+python run_autonomous_discovery.py --cycles 10 --population 5 --end-n 10000
+```
+
+The engine:
+- Generates random N-dimensional coordinate mappings
+- Detects patterns using multi-method approach (3D volumetric + multi-axis projections)
+- Removes known mathematical structure and tests if residuals extend
+- **Visual auditing**: Saves 3-panel comparison images (original | known patterns | residual)
+- Generates sorted mosaic of all evaluations for expert review
+- Runs autonomously with graceful shutdown (Ctrl+C saves progress)
+- Full logging to `logs/run.log` with error recovery
+
 ### Evolutionary Discovery
 
 Discover optimal visualization parameters using genetic algorithm:
@@ -74,6 +120,19 @@ print(f"Found {len(result.primes_found)} primes with {result.candidates_tested} 
 ```
 
 ## Key Results
+
+### Visual Pattern Analysis Findings
+
+The visual patterns in prime visualizations are caused by known mathematical structure:
+
+| Visualization | Pattern Type | Explained % | Residual % |
+|--------------|--------------|-------------|------------|
+| Ulam spiral | Diagonal (polynomial) | 75.4% | 24.6% |
+| Fibonacci forward | Diagonal | 99.9% | 0.1% |
+| Fibonacci shell | Curved (rings) | 96.7% | 3.3% |
+| Modular matrix | Grid | 99.1% | 0.9% |
+
+**Key insight**: The diagonal lines in Ulam spirals are polynomial families (4n^2 + bn + c). Detecting and removing ALL diagonals (not just famous polynomials) shows that 75%+ of visual structure is known mathematics.
 
 ### Visualization-Guided Search Efficiency
 

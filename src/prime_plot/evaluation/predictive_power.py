@@ -273,10 +273,10 @@ def compare_to_random_baseline(
         z_score = 0.0 if actual_metrics.predictive_value == baseline_mean else float('inf')
 
     return {
-        'actual_predictive_value': actual_metrics.predictive_value,
-        'baseline_mean': baseline_mean,
-        'baseline_std': baseline_std,
-        'z_score': z_score,
-        'improvement_ratio': actual_metrics.predictive_value / (baseline_mean + 1e-10),
-        'significantly_better': z_score > 2.0  # p < 0.05
+        'actual_predictive_value': float(actual_metrics.predictive_value),
+        'baseline_mean': float(baseline_mean),
+        'baseline_std': float(baseline_std),
+        'z_score': float(z_score),
+        'improvement_ratio': float(actual_metrics.predictive_value / (baseline_mean + 1e-10)),
+        'significantly_better': bool(z_score > 2.0)  # p < 0.05
     }

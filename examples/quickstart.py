@@ -1,4 +1,4 @@
-"""Quick start example for prime_plot.
+"""Quick start example for Prime_Plot_AI.
 
 Run this script to generate sample visualizations and test the installation.
 """
@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 def main():
-    print("Prime Plot - Quick Start Demo")
+    print("Prime_Plot_AI - Quick Start Demo")
     print("=" * 50)
 
     output_dir = Path("output")

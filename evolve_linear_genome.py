@@ -315,6 +315,37 @@ def evaluate_genome(genome: LinearGenome, n_samples: int = 20, block_size: int =
     return float(fitness)
 
 
+def save_genome_visualizations(run, genome: LinearGenome):
+    """Generate and save visualization images for a genome."""
+    # Generate at multiple scales
+    scales = [
+        (100_000, 200_000, "100K"),
+        (10_000_000, 10_100_000, "10M"),
+        (100_000_000, 100_100_000, "100M"),
+    ]
+
+    for start, end, label in scales:
+        numbers = np.arange(start, end, dtype=np.int64)
+        inp, tgt = create_visualization(numbers, genome, block_size=256)
+
+        if inp is not None:
+            # Save input (all numbers)
+            inp_uint8 = (inp * 255).astype(np.uint8)
+            run.save_image(inp_uint8, f"input_{label}")
+
+            # Save target (primes only)
+            tgt_uint8 = (tgt * 255).astype(np.uint8)
+            run.save_image(tgt_uint8, f"primes_{label}")
+
+            # Save combined (input in red channel, primes in green)
+            combined = np.zeros((256, 256, 3), dtype=np.uint8)
+            combined[:, :, 0] = inp_uint8  # Red = all numbers
+            combined[:, :, 1] = tgt_uint8  # Green = primes
+            run.save_image(combined, f"combined_{label}")
+
+    run.log(f"Saved visualization images for {len(scales)} scales")
+
+
 def evolve(
     population_size: int = 20,
     generations: int = 30,
@@ -412,7 +443,9 @@ def evolve(
         while len(new_population) < population_size:
             # Tournament selection
             def tournament(k=3):
-                contestants = random.sample(population[:population_size//2], k)
+                pool_size = max(k, population_size // 2)
+                pool = population[:pool_size] if pool_size <= len(population) else population
+                contestants = random.sample(pool, min(k, len(pool)))
                 return max(contestants, key=lambda g: g.fitness)
 
             parent1 = tournament()
@@ -459,6 +492,10 @@ def evolve(
 
     # Save checkpoint
     run.save_checkpoint(results, "final", is_final=True)
+
+    # Generate and save visualization images for the best genome
+    print("\nGenerating visualization images...")
+    save_genome_visualizations(run, best_ever)
 
     run.complete(
         status="completed",

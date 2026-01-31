@@ -118,7 +118,8 @@ class EvaluationPipeline:
         self._setup_default_methods()
 
     def _setup_default_methods(self):
-        """Setup default visualization methods."""
+        """Setup default visualization methods - includes ALL available visualizations."""
+        # Core visualizations
         from prime_plot.visualization.ulam import UlamSpiral
         from prime_plot.visualization.sacks import SacksSpiral
         from prime_plot.visualization.klauber import KlauberTriangle
@@ -129,8 +130,35 @@ class EvaluationPipeline:
             FibonacciShellPlot,
         )
         from prime_plot.visualization.modular import (
+            ModularGrid,
             ModularClock,
+            ModularMatrix,
             CageMatch,
+        )
+        # Novel visualizations
+        from prime_plot.visualization.novel import (
+            PyramidPlot,
+            ConePlot,
+            HexagonalSpiral,
+            PrimeGapSpiral,
+            PolynomialSpiral,
+            DiagonalWave,
+            LogarithmicSpiral,
+            SquareRootSpiral,
+            PrimeFactorSpiral,
+            DoubleSpiralInterleave,
+        )
+        # Predictive visualizations
+        from prime_plot.visualization.novel_predictive import (
+            TwinPrimeSpiral,
+            QuadraticResidueGrid,
+            SophieGermainHighlight,
+            MersenneProximityPlot,
+            PrimeGapHistogramPlot,
+            DigitSumModularPlot,
+            FermatResidueSpiral,
+            CollatzStepsPlot,
+            PrimitiveRootPattern,
         )
 
         # Calculate appropriate sizes
@@ -138,6 +166,7 @@ class EvaluationPipeline:
         klauber_rows = int(np.sqrt(self.max_n * 2)) + 1
 
         self.methods = {
+            # === Core Spirals ===
             'ulam': lambda: UlamSpiral(ulam_size).render_primes(),
 
             'sacks': lambda: SacksSpiral(
@@ -152,6 +181,7 @@ class EvaluationPipeline:
                 self.max_n, self.image_size, scaling='log'
             ).render_primes(point_size=1),
 
+            # === Fibonacci Variants ===
             'fibonacci_forward': lambda: FibonacciSpiral(
                 min(self.max_n, 50000), self.image_size
             ).render_primes(point_size=2),
@@ -164,6 +194,15 @@ class EvaluationPipeline:
                 min(self.max_n, 50000), self.image_size
             ).render_primes(point_size=2),
 
+            # === Modular Arithmetic ===
+            'modular_grid_6': lambda: ModularGrid(
+                self.max_n, mod1=6, mod2=6
+            ).render(scale=max(1, self.image_size // 100)),
+
+            'modular_grid_30': lambda: ModularGrid(
+                self.max_n, mod1=30, mod2=30
+            ).render(scale=max(1, self.image_size // 100)),
+
             'modular_clock_6': lambda: ModularClock(
                 self.max_n, modulus=6, image_size=self.image_size
             ).render_primes(point_size=1),
@@ -172,9 +211,91 @@ class EvaluationPipeline:
                 self.max_n, modulus=30, image_size=self.image_size
             ).render_primes(point_size=1),
 
+            'modular_matrix': lambda: ModularMatrix(
+                self.max_n, max_modulus=30
+            ).render(scale=max(1, self.image_size // 100)),
+
             'cage_match_10': lambda: CageMatch(
                 self.max_n, modulus=10, image_size=self.image_size
             ).render_primes(point_size=2),
+
+            # === Novel Visualizations ===
+            'pyramid': lambda: PyramidPlot(
+                self.max_n, self.image_size
+            ).render_primes(),
+
+            'cone': lambda: ConePlot(
+                self.max_n, self.image_size
+            ).render_primes(),
+
+            'hexagonal': lambda: HexagonalSpiral(
+                self.max_n, self.image_size
+            ).render_primes(),
+
+            'prime_gap': lambda: PrimeGapSpiral(
+                min(self.max_n, 50000), self.image_size
+            ).render_primes(),
+
+            'polynomial': lambda: PolynomialSpiral(
+                self.max_n, self.image_size
+            ).render_primes(),
+
+            'diagonal_wave': lambda: DiagonalWave(
+                self.max_n, self.image_size
+            ).render_primes(),
+
+            'logarithmic': lambda: LogarithmicSpiral(
+                self.max_n, self.image_size
+            ).render_primes(),
+
+            'sqrt_spiral': lambda: SquareRootSpiral(
+                self.max_n, self.image_size
+            ).render_primes(),
+
+            'prime_factor': lambda: PrimeFactorSpiral(
+                min(self.max_n, 20000), self.image_size
+            ).render_primes(),
+
+            'double_spiral': lambda: DoubleSpiralInterleave(
+                self.max_n, self.image_size
+            ).render_primes(),
+
+            # === Predictive Visualizations ===
+            'twin_prime': lambda: TwinPrimeSpiral(
+                min(self.max_n, 50000), self.image_size
+            ).render_primes(),
+
+            'quadratic_residue': lambda: QuadraticResidueGrid(
+                self.max_n, self.image_size
+            ).render_primes(),
+
+            'sophie_germain': lambda: SophieGermainHighlight(
+                min(self.max_n, 50000), self.image_size
+            ).render_primes(),
+
+            'mersenne_proximity': lambda: MersenneProximityPlot(
+                min(self.max_n, 100000), self.image_size
+            ).render_primes(),
+
+            'prime_gap_histogram': lambda: PrimeGapHistogramPlot(
+                min(self.max_n, 100000), self.image_size
+            ).render_primes(),
+
+            'digit_sum_modular': lambda: DigitSumModularPlot(
+                self.max_n, self.image_size
+            ).render_primes(),
+
+            'fermat_residue': lambda: FermatResidueSpiral(
+                self.max_n, self.image_size
+            ).render_primes(),
+
+            'collatz_steps': lambda: CollatzStepsPlot(
+                min(self.max_n, 10000), self.image_size
+            ).render_primes(),
+
+            'primitive_root': lambda: PrimitiveRootPattern(
+                min(self.max_n, 20000), self.image_size
+            ).render_primes(),
         }
 
         # Add Klauber only if size is reasonable

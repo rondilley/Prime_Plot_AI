@@ -231,7 +231,7 @@ class ParametricVisualization:
 
         return {
             'prime_pixels': int(prime_count),
-            'unique_positions': unique_pixels,
-            'coverage': coverage,
-            'is_degenerate': unique_pixels < 10 or coverage < 0.001,
+            'unique_positions': int(unique_pixels),
+            'coverage': float(coverage),
+            'is_degenerate': bool(unique_pixels < 10 or coverage < 0.001),
         }

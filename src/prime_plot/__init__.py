@@ -1,4 +1,4 @@
-"""Prime Plot - GPU/NPU-accelerated prime visualization and pattern recognition."""
+"""Prime_Plot_AI - GPU/NPU-accelerated prime visualization and pattern recognition."""
 
 __version__ = "0.1.0"
 

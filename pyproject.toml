@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "Prime Plot Contributors"}
+    {name = "Prime_Plot_AI Contributors"}
 ]
 keywords = ["prime numbers", "ulam spiral", "visualization", "machine learning", "gpu"]
 classifiers = [
@@ -60,7 +60,7 @@ all = [
 prime-plot = "prime_plot.cli:main"
 
 [project.urls]
-Repository = "https://github.com/yourusername/prime_plot"
+Repository = "https://github.com/rondidon/Prime_Plot_AI"
 
 [tool.setuptools.packages.find]
 where = ["src"]

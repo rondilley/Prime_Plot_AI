@@ -1,6 +1,8 @@
-# Prime Plot Output Analysis
+# Prime_Plot_AI Output Analysis
 
 A comprehensive chronological analysis of all experimental outputs, including visualizations, metrics, and their effectiveness for prime number detection.
+
+**Repository:** [github.com/rondidon/Prime_Plot_AI](https://github.com/rondidon/Prime_Plot_AI)
 
 **Note:** References to academic papers are cited as [Author Year] and listed in the [References](#references) section at the end.
 
@@ -20,6 +22,7 @@ A comprehensive chronological analysis of all experimental outputs, including vi
 12. [Evolutionary Discovery (Jan 27, 10:09 AM)](#12-evolutionary-discovery)
 13. [Linear Genome Evolution (Jan 27, 5:31 PM)](#13-linear-genome-evolution)
 14. [Final Discovery Run (Jan 27, 7:01 PM)](#14-final-discovery-run)
+15. [Visual Pattern Analysis (Jan 29, 2:00 PM)](#15-visual-pattern-analysis)
 
 ---
 
@@ -988,3 +991,181 @@ $$\eta = \frac{\text{Sequential tests}}{\text{Guided tests}} \approx 2.0 - 2.6\t
 - **[He et al. 2019]** He, Y.-H., Lee, K.-H., and Oliver, T. "Machine Learning Prime Numbers." arXiv:1902.01232 (2019). Early exploration of neural networks for prime prediction.
 
 - **[Zenil et al. 2021]** Zenil, H., Delahaye, J.-P., and Gauvrit, N. "Algorithmic Information Theory and Machine Learning for Primality Testing." arXiv:2103.09326 (2021). Algorithmic complexity approaches to prime detection.
+
+---
+
+## 15. Visual Pattern Analysis
+
+**Date:** January 29, 2026, 2:00 PM
+
+This section documents the comprehensive visual pattern analysis pipeline that detects and removes known mathematical structure from prime visualizations.
+
+### The Core Question
+
+**Are the visual patterns in prime visualizations novel discoveries or just known mathematics rendered visually?**
+
+### Pattern Detection Methodology
+
+The pipeline uses directional convolution to detect diagonal and curved patterns:
+
+**Diagonal Detection (for Ulam-family):**
+```python
+k45 = np.eye(7)       # 45-degree diagonal kernel
+k135 = np.fliplr(k45) # 135-degree diagonal kernel
+resp = max(convolve(image, k45), convolve(image, k135))
+on_diagonal = resp > 0.35  # Threshold for diagonal membership
+```
+
+**Curved Detection (for Sacks-family):**
+- Uses gradient magnitude to find edges of dense regions
+- Pixels on high-gradient positions are part of curved patterns
+
+### Key Findings
+
+| Visualization | Pattern Type | Detected % | Residual % |
+|--------------|--------------|------------|------------|
+| Ulam spiral | Diagonal | 75.4% | 24.6% |
+| Fibonacci forward | Diagonal | 99.9% | 0.1% |
+| Fibonacci shell | Curved | 96.7% | 3.3% |
+| Modular matrix | Grid | 99.1% | 0.9% |
+| Modular clock 6 | Radial | 80.1% | 19.9% |
+| Sacks spiral | Curved | 50.0% | 50.0% |
+
+### Interpretation
+
+**The diagonal patterns in Ulam spirals ARE polynomial structure.**
+
+Every diagonal line in the Ulam spiral corresponds to a quadratic polynomial $4n^2 + bn + c$ [Stein et al. 1967]. The previous approach of tracking only 7 famous polynomials (Euler's $n^2+n+41$, etc.) missed 90%+ of this structure because there are infinitely many such polynomials.
+
+Using directional convolution to detect ALL diagonal patterns reveals that **75.4% of primes in the Ulam spiral lie on detectable diagonals**.
+
+### Output Images
+
+For each of 33 visualization methods:
+
+1. **`{name}_original.png`** - Raw prime visualization
+2. **`{name}_known_patterns.png`** - Primes on detected patterns marked RED, others WHITE
+3. **`{name}_residual.png`** - Only primes NOT on detected patterns
+4. **`{name}_comparison.png`** - 3-panel: original | marked | residual
+
+**Mosaics:**
+- **`mosaic_visualizations.png`** - All 33 methods in grid, sorted by score (best top-left)
+- **`mosaic_residuals.png`** - All residuals after pattern removal
+
+### Conclusion
+
+**The obvious visual patterns in prime visualizations are NOT mysterious or novel - they are direct visual renderings of known number theory:**
+
+1. **Diagonal lines** = Polynomial families $4n^2 + bn + c$ [Hardy & Littlewood 1923]
+2. **Mod-6 structure** = All primes > 3 satisfy $p \equiv 1$ or $5 \pmod{6}$ [Gauss 1801]
+3. **Fibonacci rings** = Fibonacci sequence spacing properties [Koshy 2001]
+4. **Modular grids** = Residue class constraints [Dirichlet 1837]
+
+After properly detecting and removing these known structures, the residuals show dramatically less visual pattern, confirming that most visual structure is explained by known mathematics.
+
+### 33 Visualization Methods
+
+The `EvaluationPipeline` now includes all available visualization types:
+
+**Core (5):** Ulam, Sacks, Vogel sqrt, Vogel log, Klauber
+
+**Fibonacci (3):** forward, reverse, shell
+
+**Modular (6):** grid 6, grid 30, clock 6, clock 30, matrix, cage match
+
+**Novel (10):** pyramid, cone, hexagonal, prime gap, polynomial, diagonal wave, logarithmic, sqrt spiral, prime factor, double spiral
+
+**Predictive (9):** twin prime, quadratic residue, Sophie Germain, Mersenne proximity, prime gap histogram, digit sum, Fermat residue, Collatz steps, primitive root
+
+---
+
+## 16. Autonomous Discovery Engine
+
+**Date:** January 30, 2026
+
+This section documents the autonomous discovery engine that runs continuous exploration of N-dimensional prime visualizations with full visual auditing.
+
+### Purpose
+
+The autonomous discovery engine explores novel coordinate mappings that might reveal previously unknown patterns in prime distributions. It runs for hours or days, evaluating thousands of randomly-generated visualizations.
+
+### Key Innovation: Visual Auditing
+
+A critical lesson learned: **the tool must prove its work**. Every evaluation now saves:
+
+1. **3-Panel Comparison Image:**
+   - LEFT: Original visualization (all primes)
+   - CENTER: Known patterns marked in RED
+   - RIGHT: Residual (unexplained primes only)
+
+2. **Sorted Mosaic:**
+   - Grid of all evaluations sorted by fitness
+   - Border colors indicate interestingness
+   - Expert can verify pattern detection quality
+
+### Multi-Method Pattern Detection
+
+For N-dimensional visualizations, pattern detection uses multiple approaches:
+
+**3D Detection (16 kernels):**
+- 6 axis-aligned directions (±X, ±Y, ±Z)
+- 4 face diagonal directions
+- 4 space diagonal directions (body diagonals)
+- 2 planar pattern detectors
+
+**2D Projection Fallback:**
+- Max-project 3D volume along each axis
+- Apply 2D diagonal detection to each projection
+- Take maximum pattern fraction across all methods
+
+This multi-method approach prevents missing patterns that are visible in projections but obscured in volumetric detection.
+
+### Results Summary
+
+The engine discovered that 3D visualizations consistently show higher pattern fractions (94-99%) than 2D visualizations (40-80%), suggesting 3D coordinate mappings more effectively reveal known mathematical structure.
+
+| Dimension | Typical Pattern % | Typical Residual % | Interpretation |
+|-----------|------------------|-------------------|----------------|
+| 2D | 40-80% | 20-60% | Moderate structure capture |
+| 3D | 94-99% | 1-6% | High structure capture |
+
+### Fitness Scores
+
+The evolved fitness function weights:
+- Pattern detection effectiveness
+- Residual pattern in unexplained primes
+- Whether pattern extends to new number range
+
+Top discoveries achieved fitness scores of 0.69-0.70 (out of 1.0).
+
+### Error Handling Improvements
+
+The engine now includes:
+- Signal handlers for graceful shutdown (SIGINT, SIGTERM)
+- File-based logging with timestamps
+- Checkpoint saves on shutdown or error
+- Memory usage monitoring for N-dimensional grids
+- Automatic crashed run detection and status update
+
+### Output Files
+
+```
+output/runs/{timestamp}_discovery_autonomous_{D}D/
+    images/
+        discovery_0001_3D.png           # Original visualization
+        discovery_0001_3D_comparison.png # 3-panel comparison
+        mosaic_all.png                  # Sorted grid of all evaluations
+        mosaic_legend.txt               # Rankings with metrics
+    checkpoints/
+        discovery_0001.json             # Reproducible parameters
+    logs/
+        run.log                         # Timestamped execution log
+```
+
+### Lessons Learned
+
+1. **Visual auditing is essential** - Without saved images, there's no way to verify pattern detection quality
+2. **Multi-method detection** - Single-method detection misses patterns visible in different representations
+3. **Graceful shutdown** - Long runs need proper signal handling to save state
+4. **Memory monitoring** - 3D grids can use significant memory (30MB+ for 200³)
+5. **Expert verification** - The mosaic enables quick human review of thousands of evaluations

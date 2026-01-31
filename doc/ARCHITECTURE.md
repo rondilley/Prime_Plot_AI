@@ -1,13 +1,15 @@
-# Prime Plot Architecture
+# Prime_Plot_AI Architecture
+
+**Repository:** [github.com/rondidon/Prime_Plot_AI](https://github.com/rondidon/Prime_Plot_AI)
 
 ## Overview
 
-Prime Plot is a Python tool for visualizing prime number patterns and detecting primes using machine learning. The system supports 2D spiral visualizations (Ulam, Sacks, Klauber) and experimental 3D volumetric approaches.
+Prime_Plot_AI is a Python tool for visualizing prime number patterns and detecting primes using machine learning. The system supports 2D spiral visualizations (Ulam, Sacks, Klauber) and experimental 3D volumetric approaches.
 
 ## Directory Structure
 
 ```
-prime_plot/
+Prime_Plot_AI/
     doc/
         ARCHITECTURE.md     # This file
 
@@ -249,15 +251,39 @@ Random baseline generation for comparison.
 - `compute_baseline_statistics(image)` - Statistical comparison with baselines
 
 #### pipeline.py
-Main evaluation orchestration.
+Main evaluation orchestration with 33 visualization methods.
 
 - `EvaluationPipeline` - Orchestrates full evaluation
   - `run_evaluation(methods)` - Evaluate all or specified methods
   - `get_ranking()` - Get methods ranked by score
   - `generate_report(output_dir)` - Create comprehensive report
+  - **33 built-in methods**: Ulam, Sacks, Vogel (2), Klauber, Fibonacci (3), Modular (6), Novel (10), Predictive (9)
 - `VisualizationResult` - Container for single method results
 - `run_full_evaluation()` - Convenience function
 - `compare_methods_at_scales()` - Compare across number ranges
+
+### Visual Analysis Pipeline (run_visual_analysis.py)
+
+Comprehensive visual pattern analysis that:
+1. Generates all 33 visualization methods
+2. Detects visual patterns (lines, clusters, FFT, autocorrelation)
+3. Removes known mathematical structure using directional convolution
+4. Generates comparison images and mosaics
+
+**Pattern Detection:**
+- `detect_diagonal_patterns(image)` - Uses 7x7 directional kernels to find diagonal structure
+- `detect_curved_patterns(image)` - Uses gradient magnitude for curved patterns
+- Detects 75%+ of Ulam spiral structure as polynomial diagonals
+
+**Output per visualization:**
+- `{name}_original.png` - Raw visualization
+- `{name}_known_patterns.png` - Detected patterns marked in RED
+- `{name}_residual.png` - Primes with known patterns removed
+- `{name}_comparison.png` - 3-panel side-by-side
+
+**Mosaics:**
+- `mosaic_visualizations.png` - All methods sorted by score (best top-left)
+- `mosaic_residuals.png` - All residuals after pattern removal
 
 ### CLI Module (cli.py)
 
@@ -422,3 +448,131 @@ The GA discovered that t_mod_base=3 and y_mod_base=3 work best because:
 **Performance:**
 - Billion-scale correlation: 0.2321 (vs ~0 with sqrt coordinates)
 - Prime search efficiency: 2.22x at 1B scale, 2.61x at 10M scale
+
+## Autonomous Discovery Engine
+
+The `run_autonomous_discovery.py` script implements continuous autonomous exploration of N-dimensional prime visualizations with full visual auditing.
+
+### Architecture
+
+```
+AutonomousDiscovery
+    ├── NDimensionalGenome      # Parametric coordinate mapping
+    ├── PatternDetector         # Multi-method pattern detection
+    │   ├── detect_patterns_3d  # 16 directional 3D kernels
+    │   └── detect_patterns_2d  # Multi-axis 2D projections
+    ├── VisualAuditor           # 3-panel comparison images
+    └── MosaicGenerator         # Sorted evaluation grid
+```
+
+### N-Dimensional Coordinate Mapping
+
+Each dimension uses a combination of:
+
+| Component | Formula | Scale Behavior |
+|-----------|---------|----------------|
+| Linear | `coeff * n` | Increases with n |
+| Modular | `coeff * (n mod base)` | Scale-invariant |
+| Sqrt | `coeff * sqrt(n)` | Sublinear growth |
+| Log | `coeff * log(n)` | Very slow growth |
+| Sinusoidal | `coeff * sin(freq * n)` | Periodic |
+| Division | `coeff * (n // divisor)` | Step function |
+| Digit Sum | `coeff * digit_sum(n)` | Bounded range |
+
+### Multi-Method Pattern Detection
+
+The engine uses a combination of detection methods to avoid missing patterns:
+
+**For 3D visualizations:**
+1. **Volumetric 3D detection** - 16 directional kernels:
+   - 6 axis-aligned (±X, ±Y, ±Z)
+   - 4 face diagonals (XY, XZ, YZ planes)
+   - 4 space diagonals (body diagonals of cube)
+   - 2 planar patterns
+
+2. **Multi-axis 2D projections** - Max projection along each axis:
+   ```python
+   for axis in [0, 1, 2]:
+       projection = np.max(volume, axis=axis)
+       detect_patterns_2d(projection)
+   ```
+
+The final pattern fraction is the maximum across all methods.
+
+### Visual Audit Trail
+
+Every evaluation saves a 3-panel comparison image:
+
+```
+┌─────────────┬──────────────────┬─────────────┐
+│  ORIGINAL   │  KNOWN PATTERNS  │  RESIDUAL   │
+│             │   (red = known)  │             │
+│ All primes  │ Mathematical     │ Unexplained │
+│ rendered    │ structure marked │ patterns    │
+└─────────────┴──────────────────┴─────────────┘
+```
+
+This enables expert verification of pattern detection quality.
+
+### Mosaic Generation
+
+At completion (or graceful shutdown), a sorted mosaic is generated:
+
+- **Border colors:**
+  - GREEN = Interesting (residual pattern > 15% AND extends to new range)
+  - YELLOW = Extends but not interesting
+  - GRAY = Not interesting
+
+- **Metrics displayed:**
+  - `f` = fitness (0-1)
+  - `p` = pattern fraction (% on known patterns)
+  - `r` = residual pattern (% in remaining primes)
+  - `e` = extends (Y/N)
+
+### Error Recovery
+
+The engine includes comprehensive error handling:
+
+```python
+# Signal handling for graceful shutdown
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+# File-based logging with timestamps
+logging.FileHandler(run_dir / 'logs' / 'run.log')
+
+# Checkpoint saves on shutdown or error
+run.save_checkpoint(state, f"discovery_{counter:04d}")
+```
+
+### Usage
+
+```bash
+# Run for 8 hours exploring 2D, 3D, 4D visualizations
+python run_autonomous_discovery.py --hours 8 --dimensions 2,3,4
+
+# Run for 1000 cycles
+python run_autonomous_discovery.py --cycles 1000 --dimensions 2,3
+
+# Quick test
+python run_autonomous_discovery.py --cycles 10 --population 5 --end-n 10000
+```
+
+### Output Structure
+
+```
+output/runs/{timestamp}_discovery_autonomous_{D}D/
+    metadata.json           # Run metadata
+    config.json             # Configuration
+    results.json            # Final summary
+    checkpoints/
+        discovery_0001.json # Each interesting discovery
+        ...
+    images/
+        discovery_0001_3D.png           # Original
+        discovery_0001_3D_comparison.png # 3-panel
+        mosaic_all.png                  # Sorted grid
+        mosaic_legend.txt               # Rankings
+    logs/
+        run.log             # Timestamped log
+```
