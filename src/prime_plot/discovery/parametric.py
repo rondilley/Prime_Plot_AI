@@ -120,7 +120,7 @@ class ParametricVisualization:
 
         # Add quadratic residue influence
         if g.qr_mod > 0:
-            qr = quadratic_residue_score(n_values, g.qr_base)
+            qr = quadratic_residue_score(n_values, int(g.qr_base))
             # Use QR to create offset pattern
             x += g.qr_mod * qr * np.cos(n * 0.1)
             y += g.qr_mod * qr * np.sin(n * 0.1)

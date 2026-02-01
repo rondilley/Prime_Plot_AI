@@ -197,7 +197,7 @@ def brute_force_search(
     if seed is not None:
         random.seed(seed)
 
-    primes_found = []
+    primes_found: List[int] = []
     tests = 0
 
     # Align to mod-6 wheel
@@ -273,7 +273,7 @@ def modular_search(
         n += 1
     step = 4 if n % 6 == 1 else 2
 
-    candidates = []
+    candidates: List[Tuple[int, float, Tuple[int, int]]] = []
     while len(candidates) < target_primes * 50:
         key = get_mod_bin(n, density_map.n_bins)
         score = density_map.bin_scores.get(key, density_map.mean_density)
@@ -336,7 +336,7 @@ def stacked_search(
         train_start = max(2, start - train_size - 10_000)
         density_map = build_density_map(train_start, train_size)
 
-    primes_found = []
+    primes_found: List[int] = []
     tests = 0
     high_hits = 0
     low_hits = 0
@@ -358,7 +358,7 @@ def stacked_search(
         n += 1
     step = 4 if n % 6 == 1 else 2
 
-    candidates = []
+    candidates: List[Tuple[int, float, Tuple[int, int]]] = []
     while len(candidates) < target_primes * 50:
         key = get_mod_bin(n, density_map.n_bins)
         score = density_map.bin_scores.get(key, density_map.mean_density)

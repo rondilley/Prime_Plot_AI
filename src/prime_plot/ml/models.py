@@ -6,7 +6,7 @@ adapted for prime/composite classification in spiral visualizations.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Union, cast
 
 import torch
 import torch.nn as nn
@@ -33,6 +33,9 @@ class ConvBlock(nn.Module):
 
 class UpBlock(nn.Module):
     """Upsampling block with skip connection."""
+
+    up: Union[nn.Upsample, nn.ConvTranspose2d]
+    conv: ConvBlock
 
     def __init__(self, in_channels: int, out_channels: int, bilinear: bool = True):
         super().__init__()
@@ -160,6 +163,7 @@ class PrimeUNet(nn.Module):
         else:
             raise ValueError(f"Unknown encoder: {encoder_name}")
 
+        self.input_conv: Union[nn.Conv2d, nn.Identity]
         if in_channels != 3:
             self.input_conv = nn.Conv2d(in_channels, 3, kernel_size=1)
         else:

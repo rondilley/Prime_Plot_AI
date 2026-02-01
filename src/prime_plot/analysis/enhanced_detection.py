@@ -40,7 +40,7 @@ class PatternDetectionResult:
 def create_gabor_filter_bank(
     ksize: int = 15,
     orientations: int = 12,
-    scales: List[float] = None
+    scales: Optional[List[float]] = None
 ) -> List[np.ndarray]:
     """Create a bank of Gabor filters at multiple orientations and scales.
 
@@ -105,7 +105,7 @@ def _gabor_kernel(
 def detect_with_gabor_bank(
     binary_image: np.ndarray,
     kernels: List[np.ndarray],
-    threshold: float = 0.25
+    threshold: float = 0.45  # Increased from 0.25 - require stronger response
 ) -> Tuple[np.ndarray, float]:
     """Detect patterns using Gabor filter bank.
 
@@ -128,7 +128,7 @@ def detect_with_gabor_bank(
         max_response /= max_response.max()
 
     # Threshold
-    pattern_mask = (max_response > threshold) & (binary_image > 0.5)
+    pattern_mask = (max_response > threshold) & (binary_image > 0)
     pattern_fraction = pattern_mask.sum() / total_primes
 
     return pattern_mask, float(pattern_fraction)
@@ -185,10 +185,15 @@ def detect_with_fft(
 
         if period_x < w and period_y < h:
             # Mark pixels that align with this periodicity
+            # FIXED: Use AND logic, not OR. Only mark if BOTH coordinates align.
+            # Also require exact alignment (not within 2) for tighter matching.
             for y in range(h):
                 for x in range(w):
-                    if binary_image[y, x] > 0.5:
-                        if (x % max(1, period_x) < 2) or (y % max(1, period_y) < 2):
+                    if binary_image[y, x] > 0:
+                        x_aligned = (x % max(1, period_x) == 0)
+                        y_aligned = (y % max(1, period_y) == 0)
+                        # Require both dimensions to align with periodicity
+                        if x_aligned and y_aligned:
                             pattern_mask[y, x] = True
 
     pattern_fraction = pattern_mask.sum() / total_primes if total_primes > 0 else 0.0
@@ -198,8 +203,8 @@ def detect_with_fft(
 
 def detect_clusters(
     binary_image: np.ndarray,
-    min_cluster_size: int = 5,
-    connectivity_radius: float = 2.0
+    min_cluster_size: int = 8,  # Increased from 5 - require larger clusters
+    connectivity_radius: float = 1.0  # Reduced from 2.0 - tighter clustering
 ) -> Tuple[np.ndarray, float, int]:
     """Detect clustered patterns using connected component analysis.
 
@@ -216,7 +221,7 @@ def detect_clusters(
     # Dilate to connect nearby primes
     structure = ndimage.generate_binary_structure(2, 2)
     dilated = ndimage.binary_dilation(
-        binary_image > 0.5,
+        binary_image > 0,
         structure=structure,
         iterations=int(connectivity_radius)
     )
@@ -230,7 +235,7 @@ def detect_clusters(
 
     for i in range(1, num_features + 1):
         component_mask = labeled == i
-        primes_in_component = (binary_image > 0.5) & component_mask
+        primes_in_component = (binary_image > 0) & component_mask
         count = primes_in_component.sum()
 
         if count >= min_cluster_size:
@@ -275,8 +280,8 @@ def detect_voids_and_concentrations(
         high_threshold = mean_local + threshold_sigma * std_local
         low_threshold = mean_local - threshold_sigma * std_local
 
-        concentration_mask = (local_count > high_threshold) & (binary_image > 0.5)
-        void_mask = (local_count < low_threshold) & (binary_image > 0.5)
+        concentration_mask = (local_count > high_threshold) & (binary_image > 0)
+        void_mask = (local_count < low_threshold) & (binary_image > 0)
     else:
         concentration_mask = np.zeros_like(binary_image, dtype=bool)
         void_mask = np.zeros_like(binary_image, dtype=bool)
@@ -294,7 +299,7 @@ def detect_voids_and_concentrations(
 def enhanced_directional_detection(
     binary_image: np.ndarray,
     num_orientations: int = 16,
-    kernel_sizes: List[int] = None,
+    kernel_sizes: Optional[List[int]] = None,
     threshold: float = 0.30
 ) -> Tuple[np.ndarray, float]:
     """Enhanced directional detection with more orientations and scales.
@@ -321,7 +326,7 @@ def enhanced_directional_detection(
             response = ndimage.convolve(binary_image, kernel / kernel.sum())
             max_response = np.maximum(max_response, response)
 
-    pattern_mask = (max_response > threshold) & (binary_image > 0.5)
+    pattern_mask = (max_response > threshold) & (binary_image > 0)
     pattern_fraction = pattern_mask.sum() / total_primes
 
     return pattern_mask, float(pattern_fraction)
@@ -370,7 +375,6 @@ def comprehensive_pattern_detection(
             method_agreement=0.0
         )
 
-    combined_mask = np.zeros_like(binary_image, dtype=bool)
     method_masks = []
     fractions = []
 
@@ -378,7 +382,6 @@ def comprehensive_pattern_detection(
     if use_gabor:
         gabor_kernels = create_gabor_filter_bank(ksize=15, orientations=12)
         gabor_mask, gabor_frac = detect_with_gabor_bank(binary_image, gabor_kernels)
-        combined_mask |= gabor_mask
         method_masks.append(gabor_mask)
         fractions.append(gabor_frac)
     else:
@@ -387,7 +390,6 @@ def comprehensive_pattern_detection(
     # 2. FFT periodic detection
     if use_fft:
         fft_mask, fft_frac, _ = detect_with_fft(binary_image)
-        combined_mask |= fft_mask
         method_masks.append(fft_mask)
         fractions.append(fft_frac)
     else:
@@ -396,7 +398,6 @@ def comprehensive_pattern_detection(
     # 3. Enhanced directional detection
     if use_directional:
         dir_mask, dir_frac = enhanced_directional_detection(binary_image)
-        combined_mask |= dir_mask
         method_masks.append(dir_mask)
         fractions.append(dir_frac)
     else:
@@ -405,11 +406,19 @@ def comprehensive_pattern_detection(
     # 4. Cluster detection
     if use_clusters:
         cluster_mask, cluster_frac, _ = detect_clusters(binary_image)
-        combined_mask |= cluster_mask
         method_masks.append(cluster_mask)
         fractions.append(cluster_frac)
     else:
         cluster_frac = 0.0
+
+    # FIXED: Require 2+ methods to agree (was OR logic catching everything)
+    # Only mark a prime as "known pattern" if multiple detection methods agree
+    if method_masks:
+        agreement_count = sum(m.astype(int) for m in method_masks)
+        # Require at least 2 methods to agree (AND-ish logic)
+        combined_mask = (agreement_count >= 2) & (binary_image > 0)
+    else:
+        combined_mask = np.zeros_like(binary_image, dtype=bool)
 
     # Compute combined fraction
     combined_fraction = combined_mask.sum() / total_primes
@@ -418,7 +427,7 @@ def comprehensive_pattern_detection(
     if method_masks:
         agreement_count = sum(m.astype(int) for m in method_masks)
         # Points where 2+ methods agree
-        high_agreement = (agreement_count >= 2) & (binary_image > 0.5)
+        high_agreement = (agreement_count >= 2) & (binary_image > 0)
         method_agreement = high_agreement.sum() / total_primes
     else:
         method_agreement = 0.0
@@ -478,7 +487,7 @@ def evaluate_residual_density(
         (density_map, variance_ratio, high_low_ratio)
     """
     h, w = residual_image.shape
-    binary = residual_image > 0.5
+    binary = residual_image > 0
 
     # Compute density per bin
     n_bins_y = max(1, h // bin_size)
@@ -508,9 +517,9 @@ def evaluate_residual_density(
         return density_map, 1.0, 1.0
 
     # Compute variance ratio
-    counts = np.array(counts)
-    expected_variance = counts.mean()  # Poisson assumption
-    actual_variance = counts.var()
+    counts_arr = np.array(counts)
+    expected_variance = float(counts_arr.mean())  # Poisson assumption
+    actual_variance = float(counts_arr.var())
     variance_ratio = actual_variance / expected_variance if expected_variance > 0 else 1.0
 
     # Compute high/low density ratio
@@ -570,8 +579,8 @@ def test_density_transfer(
     pattern_mask_a, _ = detect_patterns_nd(target_a, 2)
     pattern_mask_b, _ = detect_patterns_nd(target_b, 2)
 
-    residual_a = (target_a > 0.5) & ~pattern_mask_a
-    residual_b = (target_b > 0.5) & ~pattern_mask_b
+    residual_a = (target_a > 0) & ~pattern_mask_a
+    residual_b = (target_b > 0) & ~pattern_mask_b
 
     # Compute density maps
     density_a, _, _ = evaluate_residual_density(residual_a.astype(np.float32), bin_size)
@@ -610,9 +619,9 @@ def test_density_transfer(
 
 def evaluate_residual(
     residual_image: np.ndarray,
-    genome=None,
-    prime_set: set = None,
-    test_range: Tuple[int, int] = None,
+    genome: Optional[object] = None,
+    prime_set: Optional[set] = None,
+    test_range: Optional[Tuple[int, int]] = None,
     grid_size: int = 128
 ) -> ResidualEvaluationResult:
     """Comprehensive evaluation of residual patterns.
@@ -623,7 +632,7 @@ def evaluate_residual(
     2. Test if density patterns transfer to new range
     3. Score exploitability for prime search
     """
-    binary = residual_image > 0.5
+    binary = residual_image > 0
     total_primes = binary.sum()
 
     if total_primes < 20:

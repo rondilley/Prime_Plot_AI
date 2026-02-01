@@ -1,5 +1,6 @@
 """3D Ulam spiral generation and visualization."""
 
+from typing import Optional
 import numpy as np
 
 try:
@@ -260,7 +261,7 @@ def compute_sieve(limit: int) -> np.ndarray:
     return is_prime
 
 
-def visualize_3d_primes(grid: np.ndarray, prime_mask: np.ndarray, output_path: str = None):
+def visualize_3d_primes(grid: np.ndarray, prime_mask: np.ndarray, output_path: Optional[str] = None):
     """Visualize 3D prime locations using matplotlib."""
     try:
         import matplotlib.pyplot as plt
@@ -277,11 +278,11 @@ def visualize_3d_primes(grid: np.ndarray, prime_mask: np.ndarray, output_path: s
     ax = fig.add_subplot(111, projection='3d')
 
     # Plot primes as points
-    ax.scatter(x_coords, y_coords, z_coords, c='green', marker='.', s=1, alpha=0.5)
+    ax.scatter(x_coords, y_coords, z_coords, c='green', marker='.', alpha=0.5)
 
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
+    ax.set_zlabel('Z')  # type: ignore[attr-defined]
     ax.set_title(f'3D Prime Distribution ({len(x_coords)} primes)')
 
     if output_path:

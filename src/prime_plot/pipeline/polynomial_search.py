@@ -160,15 +160,15 @@ def polynomial_first_search(
             if v >= start:
                 poly_values.add(v)
 
-    poly_values = sorted(poly_values)
+    poly_values_list = sorted(poly_values)
 
     # Search
-    primes_found = []
+    primes_found: List[int] = []
     poly_tests = 0
     fallback_tests = 0
 
     # Phase 1: Test polynomial values
-    for v in poly_values:
+    for v in poly_values_list:
         if len(primes_found) >= target_primes:
             break
         poly_tests += 1
@@ -177,7 +177,7 @@ def polynomial_first_search(
 
     # Phase 2: Fall back to wheel-filtered sequential if needed
     if len(primes_found) < target_primes:
-        poly_set = set(poly_values)
+        poly_set = set(poly_values_list)
 
         # Start wheel-filtered search
         n = start
@@ -226,7 +226,7 @@ def brute_force_search(
     if seed is not None:
         random.seed(seed)
 
-    primes_found = []
+    primes_found: List[int] = []
     tests = 0
 
     # Wheel-filtered search (mod 6)

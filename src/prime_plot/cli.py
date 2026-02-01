@@ -87,23 +87,25 @@ def cmd_fibonacci(args: argparse.Namespace) -> int:
     print(f"Generating Fibonacci spiral: max_n={args.max_n}, type={args.type}, size={args.size}")
 
     if args.type == "forward":
-        spiral = FibonacciSpiral(args.max_n, image_size=args.size)
+        fwd_spiral = FibonacciSpiral(args.max_n, image_size=args.size)
+        image = fwd_spiral.render_primes(point_size=args.point_size, use_gpu=args.gpu)
     elif args.type == "reverse":
-        spiral = ReverseFibonacciSpiral(args.max_n, image_size=args.size)
+        rev_spiral = ReverseFibonacciSpiral(args.max_n, image_size=args.size)
+        image = rev_spiral.render_primes(point_size=args.point_size, use_gpu=args.gpu)
     elif args.type == "shell":
-        spiral = FibonacciShellPlot(args.max_n, image_size=args.size)
+        shell_spiral = FibonacciShellPlot(args.max_n, image_size=args.size)
+        image = shell_spiral.render_primes(point_size=args.point_size, use_gpu=args.gpu)
     else:
         print(f"Unknown type: {args.type}")
         return 1
-
-    image = spiral.render_primes(point_size=args.point_size, use_gpu=args.gpu)
 
     output = Path(args.output)
     save_raw_image(image, output)
 
     # Print statistics for shell type
     if args.type == "shell" and args.stats:
-        stats = spiral.shell_statistics()
+        shell_spiral_for_stats = FibonacciShellPlot(args.max_n, image_size=args.size)
+        stats = shell_spiral_for_stats.shell_statistics()
         print("\nFibonacci shell statistics:")
         print(f"{'Shell':>5} {'Start':>10} {'End':>10} {'Size':>8} {'Primes':>7} {'Density':>8}")
         for s in stats[:15]:
@@ -126,25 +128,25 @@ def cmd_modular(args: argparse.Namespace) -> int:
     print(f"Generating modular {args.type}: max_n={args.max_n}, modulus={args.modulus}")
 
     if args.type == "grid":
-        viz = ModularGrid(args.max_n, args.modulus, args.modulus2 or args.modulus)
-        image = viz.render(scale=args.size // args.modulus)
+        grid_viz = ModularGrid(args.max_n, args.modulus, args.modulus2 or args.modulus)
+        image = grid_viz.render(scale=args.size // args.modulus)
         if args.stats:
-            analysis = viz.analyze_residue_classes()
+            analysis = grid_viz.analyze_residue_classes()
             print(f"\nActive residue classes: {analysis['active_classes']}/{analysis['total_classes']}")
             print("Top residues by prime count:")
             for r in analysis['residues'][:10]:
                 print(f"  ({r['residue1']}, {r['residue2']}): {r['count']} primes ({r['fraction']*100:.1f}%)")
     elif args.type == "clock":
-        viz = ModularClock(args.max_n, args.modulus, args.size)
+        clock_viz = ModularClock(args.max_n, args.modulus, args.size)
         if args.spokes:
-            image = viz.render_with_spokes(point_size=args.point_size)
+            image = clock_viz.render_with_spokes(point_size=args.point_size)
         else:
-            image = viz.render_primes(point_size=args.point_size, use_gpu=args.gpu)
+            image = clock_viz.render_primes(point_size=args.point_size, use_gpu=args.gpu)
     elif args.type == "matrix":
-        viz = ModularMatrix(args.max_n, args.modulus)
-        image = viz.render(scale=max(1, args.size // args.modulus))
+        matrix_viz = ModularMatrix(args.max_n, args.modulus)
+        image = matrix_viz.render(scale=max(1, args.size // args.modulus))
         if args.stats:
-            forbidden = viz.find_forbidden_residues()
+            forbidden = matrix_viz.find_forbidden_residues()
             if forbidden:
                 print("\nResidues with no primes (coprime to modulus):")
                 for m, residues in forbidden.items():
@@ -152,13 +154,13 @@ def cmd_modular(args: argparse.Namespace) -> int:
             else:
                 print("\nNo forbidden residue classes found (expected).")
     elif args.type == "cage":
-        viz = CageMatch(args.max_n, args.modulus, args.size)
+        cage_viz = CageMatch(args.max_n, args.modulus, args.size)
         if args.density:
-            image = viz.render_density(scale=args.size // args.modulus)
+            image = cage_viz.render_density(scale=args.size // args.modulus)
         else:
-            image = viz.render_primes(point_size=args.point_size, use_gpu=args.gpu)
+            image = cage_viz.render_primes(point_size=args.point_size, use_gpu=args.gpu)
         if args.stats:
-            period = viz.pisano_period()
+            period = cage_viz.pisano_period()
             print(f"\nPisano period for mod {args.modulus}: {period}")
     else:
         print(f"Unknown type: {args.type}")
@@ -253,11 +255,12 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
         scales = [int(s) for s in args.scales.split(',')]
         print(f"Comparing visualization methods across scales: {scales}")
 
-        results = compare_methods_at_scales(
+        scale_results = compare_methods_at_scales(
             scales=scales,
             methods=args.methods.split(',') if args.methods else None,
             verbose=True,
         )
+        # scale_results is dict[int, list[tuple[str, float]]]
 
         return 0
 
@@ -388,7 +391,7 @@ def cmd_search(args: argparse.Namespace) -> int:
         from prime_plot.pipeline.residual_search import (
             stacked_search,
             modular_search,
-            brute_force_search,
+            brute_force_search as residual_brute_force_search,
             compare_methods as compare_residual_methods,
         )
 
@@ -420,23 +423,23 @@ def cmd_search(args: argparse.Namespace) -> int:
         else:
             t0 = time.perf_counter()
             if args.method == "modular":
-                result = modular_search(args.start, args.count, seed=args.seed)
+                res_result = modular_search(args.start, args.count, seed=args.seed)
             else:  # stacked or residual
-                result = stacked_search(args.start, args.count, seed=args.seed)
+                res_result = stacked_search(args.start, args.count, seed=args.seed)
             elapsed = (time.perf_counter() - t0) * 1000
 
-            print(f"\nFound {len(result.primes_found)} primes in {elapsed:.1f}ms")
-            print(f"Tests performed: {result.tests_performed}")
-            print(f"High-density hits: {result.high_density_hits}")
-            if result.gap_skips > 0:
-                print(f"Gap-guided skips: {result.gap_skips}")
+            print(f"\nFound {len(res_result.primes_found)} primes in {elapsed:.1f}ms")
+            print(f"Tests performed: {res_result.tests_performed}")
+            print(f"High-density hits: {res_result.high_density_hits}")
+            if res_result.gap_skips > 0:
+                print(f"Gap-guided skips: {res_result.gap_skips}")
 
             if args.verbose:
                 print(f"\nPrimes found:")
-                for i, p in enumerate(result.primes_found[:20]):
+                for i, p in enumerate(res_result.primes_found[:20]):
                     print(f"  {i+1}. {p:,}")
-                if len(result.primes_found) > 20:
-                    print(f"  ... and {len(result.primes_found) - 20} more")
+                if len(res_result.primes_found) > 20:
+                    print(f"  ... and {len(res_result.primes_found) - 20} more")
 
     else:
         print(f"Unknown method: {args.method}")
@@ -495,7 +498,7 @@ def _run_search_benchmark(args: argparse.Namespace) -> int:
         'by_scale': {},
     }
 
-    all_improvements = {'polynomial': [], 'modular': [], 'stacked': []}
+    all_improvements: dict[str, list[float]] = {'polynomial': [], 'modular': [], 'stacked': []}
 
     try:
         for scale in scales:
@@ -702,7 +705,6 @@ def cmd_discover(args: argparse.Namespace) -> int:
         max_n=max_n,
         image_size=image_size,
         output_dir=run.checkpoints_dir,
-        images_dir=run.images_dir,
         save_interval=max(1, generations // 5),
         verbose=True,
         seed_presets=config_dict["seed_presets"],
@@ -710,6 +712,12 @@ def cmd_discover(args: argparse.Namespace) -> int:
 
     discovery = EvolutionaryDiscovery(config, seed=args.seed)
     best_genome = discovery.run()
+
+    if best_genome is None:
+        run.log("Evolution complete. No best genome found.")
+        run.complete(status="failed", summary={"error": "No genome found"})
+        print("Evolution failed - no genome found")
+        return 1
 
     run.log(f"Evolution complete. Best fitness: {best_genome.fitness:.4f}")
 
@@ -1008,6 +1016,12 @@ def cmd_evolve(args: argparse.Namespace) -> int:
     print("\n" + "=" * 70)
     print("EVOLUTION COMPLETE")
     print("=" * 70)
+
+    if best_ever is None:
+        print("No best genome found")
+        run.complete(status="failed", summary={"error": "No genome found"})
+        return 1
+
     print(f"\nBest genome (fitness = {best_ever.fitness:.4f}):")
     for key, val in best_ever.to_dict().items():
         if key not in ['fitness', 'generation']:

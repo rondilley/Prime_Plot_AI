@@ -97,7 +97,7 @@ def _deduplicate_patterns(patterns: list[DiagonalPattern]) -> list[DiagonalPatte
     if not patterns:
         return []
 
-    seen_values = set()
+    seen_values: set[int] = set()
     unique = []
 
     for p in patterns:

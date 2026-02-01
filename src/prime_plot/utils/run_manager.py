@@ -175,7 +175,7 @@ class RunManager:
         Returns:
             List of Run objects
         """
-        runs = []
+        runs: list['Run'] = []
 
         if not self.runs_dir.exists():
             return runs

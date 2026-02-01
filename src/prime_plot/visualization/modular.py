@@ -534,16 +534,16 @@ def generate_modular_image(
         2D uint8 array suitable for image display.
     """
     if viz_type == "grid":
-        viz = ModularGrid(max_n, modulus, modulus)
-        return viz.render(scale=image_size // modulus)
+        grid_viz = ModularGrid(max_n, modulus, modulus)
+        return grid_viz.render(scale=image_size // modulus)
     elif viz_type == "clock":
-        viz = ModularClock(max_n, modulus, image_size)
-        return viz.render_primes(use_gpu=use_gpu)
+        clock_viz = ModularClock(max_n, modulus, image_size)
+        return clock_viz.render_primes(use_gpu=use_gpu)
     elif viz_type == "matrix":
-        viz = ModularMatrix(max_n, modulus)
-        return viz.render(scale=image_size // modulus)
+        matrix_viz = ModularMatrix(max_n, modulus)
+        return matrix_viz.render(scale=image_size // modulus)
     elif viz_type == "cage":
-        viz = CageMatch(max_n, modulus, image_size)
-        return viz.render_primes(use_gpu=use_gpu)
+        cage_viz = CageMatch(max_n, modulus, image_size)
+        return cage_viz.render_primes(use_gpu=use_gpu)
     else:
         raise ValueError(f"Unknown viz_type: {viz_type}")

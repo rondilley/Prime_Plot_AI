@@ -576,7 +576,7 @@ def compare_methods_at_scales(
         print("="*50)
 
         # Get all method names
-        all_methods = set()
+        all_methods: set[str] = set()
         for rankings in results.values():
             all_methods.update(name for name, _ in rankings)
 

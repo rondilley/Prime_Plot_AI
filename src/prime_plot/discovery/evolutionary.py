@@ -52,7 +52,7 @@ class EvolutionConfig:
 class EvolutionaryDiscovery:
     """Genetic algorithm for discovering prime visualizations."""
 
-    def __init__(self, config: EvolutionConfig, seed: int = None):
+    def __init__(self, config: EvolutionConfig, seed: Optional[int] = None):
         self.config = config
         self.rng = np.random.default_rng(seed)
 
@@ -62,17 +62,16 @@ class EvolutionaryDiscovery:
         self.generation: int = 0
         self.stagnation_count: int = 0
 
-        self.history: Dict[str, List] = {
+        self.history: Dict[str, List[Any]] = {
             'best_fitness': [],
             'avg_fitness': [],
             'diversity': [],
         }
 
+        self.output_dir: Optional[Path] = None
         if config.output_dir:
             self.output_dir = Path(config.output_dir)
             self.output_dir.mkdir(parents=True, exist_ok=True)
-        else:
-            self.output_dir = None
 
     def initialize_population(self) -> None:
         """Create initial population."""
@@ -145,11 +144,12 @@ class EvolutionaryDiscovery:
 
     def select_parent(self) -> VisualizationGenome:
         """Tournament selection."""
-        tournament = self.rng.choice(
-            self.population,
-            size=self.config.tournament_size,
+        indices = self.rng.choice(
+            len(self.population),
+            size=min(self.config.tournament_size, len(self.population)),
             replace=False
         )
+        tournament: List[VisualizationGenome] = [self.population[int(i)] for i in indices]
         return max(tournament, key=lambda g: g.fitness)
 
     def calculate_diversity(self) -> float:
@@ -158,12 +158,12 @@ class EvolutionaryDiscovery:
             return 0.0
 
         arrays = [g.to_array() for g in self.population]
-        total_dist = 0
+        total_dist: float = 0.0
         count = 0
 
         for i in range(len(arrays)):
             for j in range(i + 1, len(arrays)):
-                total_dist += np.linalg.norm(arrays[i] - arrays[j])
+                total_dist += float(np.linalg.norm(arrays[i] - arrays[j]))
                 count += 1
 
         return total_dist / count if count > 0 else 0.0
@@ -223,8 +223,8 @@ class EvolutionaryDiscovery:
 
     def run(
         self,
-        callback: Optional[Callable[[int, VisualizationGenome, float], None]] = None
-    ) -> VisualizationGenome:
+        callback: Optional[Callable[[int, Optional[VisualizationGenome], float], None]] = None
+    ) -> Optional[VisualizationGenome]:
         """Run evolutionary search.
 
         Args:
@@ -370,9 +370,9 @@ def run_discovery(
     max_n: int = 10000,
     image_size: int = 256,
     output_dir: str = "output/discovery",
-    seed: int = None,
+    seed: Optional[int] = None,
     verbose: bool = True,
-) -> VisualizationGenome:
+) -> Optional[VisualizationGenome]:
     """Run evolutionary discovery with default settings.
 
     Args:
@@ -412,6 +412,9 @@ if __name__ == "__main__":
     )
 
     print("\nBest genome parameters:")
-    for key, value in best.to_dict().items():
-        if key not in ('fitness', 'generation'):
-            print(f"  {key}: {value:.4f}")
+    if best is not None:
+        for key, value in best.to_dict().items():
+            if key not in ('fitness', 'generation'):
+                print(f"  {key}: {value:.4f}")
+    else:
+        print("  No best genome found")

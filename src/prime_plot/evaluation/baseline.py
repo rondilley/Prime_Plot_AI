@@ -64,7 +64,8 @@ def generate_density_matched_baseline(
 
     density = (img > threshold).mean()
 
-    return generate_random_baseline(reference_image.shape, density, seed)
+    h, w = reference_image.shape[:2]
+    return generate_random_baseline((h, w), density, seed)
 
 
 def generate_radial_density_baseline(
@@ -221,9 +222,10 @@ def compute_baseline_statistics(
     entropies = []
     cluster_scores = []
 
+    h, w = prime_image.shape[:2]
     for i in range(num_baselines):
         baseline = generate_random_baseline(
-            prime_image.shape, density, seed=seed + i
+            (h, w), density, seed=seed + i
         )
 
         line_score, _ = calculate_line_density(baseline)

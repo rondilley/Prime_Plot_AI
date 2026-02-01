@@ -344,7 +344,7 @@ class CollatzStepsPlot:
         self.max_n = max_n
         self.image_size = image_size
         self.primes = set(generate_primes(max_n))
-        self._cache = {}
+        self._cache: dict[int, int] = {}
 
     def _collatz_steps(self, n: int) -> int:
         """Count steps to reach 1."""

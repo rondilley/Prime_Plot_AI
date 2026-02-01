@@ -160,6 +160,35 @@ Billion-scale correlation: 0.2321 (prime vs composite score difference: 0.264)
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    subgraph Input
+        N[Integer Range]
+    end
+
+    subgraph Processing
+        Sieve[Prime Sieve]
+        Viz[Visualization<br/>33 methods]
+        ML[U-Net Model]
+    end
+
+    subgraph Discovery
+        GA[Genetic Algorithm]
+        Eval[Pattern Evaluation]
+        Valid[Search Validation]
+    end
+
+    subgraph Output
+        Images[Visualizations]
+        Primes[Found Primes]
+    end
+
+    N --> Sieve --> Viz --> ML --> Primes
+    GA --> Viz
+    Viz --> Eval --> Valid --> Primes
+    Viz --> Images
+```
+
 ```
 src/prime_plot/
     core/           # Prime generation (sieve.py, polynomials.py)
@@ -172,7 +201,7 @@ src/prime_plot/
     cli.py          # Command-line interface
 ```
 
-See [doc/ARCHITECTURE.md](doc/ARCHITECTURE.md) for detailed documentation.
+See [doc/ARCHITECTURE.md](doc/ARCHITECTURE.md) for detailed documentation with comprehensive mermaid diagrams.
 
 ## How It Works
 
@@ -221,6 +250,13 @@ Commands:
     analyze     Analyze prime patterns
     polynomial  Search for prime-generating polynomials
 ```
+
+## Recent Updates (Feb 2026)
+
+- **Fixed pattern detection threshold bug**: The 3-panel visualization (ORIGINAL | KNOWN PATTERNS | RESIDUAL) was missing most primes due to a `> 0.5` threshold on normalized grids. Now correctly uses `> 0` to catch all primes.
+- **Fixed logarithmic spiral overflow**: Large n values caused `np.exp()` overflow. Added exponent clamping.
+- **Type checking**: Fixed 60+ mypy errors across the codebase.
+- **4D visualization support**: Autonomous discovery now supports 4D coordinate mappings with projection to 3D/2D.
 
 ## Dependencies
 

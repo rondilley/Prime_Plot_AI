@@ -60,12 +60,13 @@ class PredictionResult:
             f"  Processing time: {self.processing_time:.2f}s",
         ]
         if self.accuracy is not None:
-            lines.extend([
-                f"  Accuracy: {self.accuracy*100:.2f}%",
-                f"  Precision: {self.precision*100:.2f}%",
-                f"  Recall: {self.recall*100:.2f}%",
-                f"  F1 Score: {self.f1*100:.2f}%",
-            ])
+            lines.append(f"  Accuracy: {self.accuracy*100:.2f}%")
+        if self.precision is not None:
+            lines.append(f"  Precision: {self.precision*100:.2f}%")
+        if self.recall is not None:
+            lines.append(f"  Recall: {self.recall*100:.2f}%")
+        if self.f1 is not None:
+            lines.append(f"  F1 Score: {self.f1*100:.2f}%")
         return "\n".join(lines)
 
 
@@ -189,7 +190,7 @@ class PrimePredictor:
         py = np.clip(py, 0, self.block_size - 1)
 
         # Create coordinate mapping (for reverse lookup)
-        coord_map = {}
+        coord_map: dict[tuple[int, int], list[int]] = {}
         for i in range(len(px)):
             key = (px[i], py[i])
             if key not in coord_map:
@@ -273,12 +274,20 @@ class PrimePredictor:
             total = end_n - start_n
             tn = total - tp - fp - fn
 
-            accuracy = (tp + tn) / total if total > 0 else 0
-            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-            f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+            acc_val = (tp + tn) / total if total > 0 else 0.0
+            prec_val = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+            rec_val = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+            f1_val = 2 * prec_val * rec_val / (prec_val + rec_val) if (prec_val + rec_val) > 0 else 0.0
+
+            accuracy: Optional[float] = acc_val
+            precision: Optional[float] = prec_val
+            recall: Optional[float] = rec_val
+            f1: Optional[float] = f1_val
         else:
-            accuracy = precision = recall = f1 = None
+            accuracy = None
+            precision = None
+            recall = None
+            f1 = None
 
         processing_time = time.time() - start_time
 

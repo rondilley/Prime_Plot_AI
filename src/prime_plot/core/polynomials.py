@@ -37,7 +37,9 @@ class PrimePolynomial:
     def evaluate_range(self, start: int, stop: int) -> np.ndarray:
         """Evaluate polynomial for n in [start, stop)."""
         n = np.arange(start, stop)
-        return self.evaluate(n)
+        result = self.evaluate(n)
+        # Result is always ndarray when input is ndarray
+        return result if isinstance(result, np.ndarray) else np.array([result])
 
     def prime_count(self, start: int, stop: int) -> int:
         """Count how many values in [start, stop) are prime."""

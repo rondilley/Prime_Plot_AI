@@ -494,12 +494,13 @@ def generate_fibonacci_image(
         2D uint8 array suitable for image display.
     """
     if spiral_type == "forward":
-        spiral = FibonacciSpiral(max_n, image_size)
+        fwd_spiral = FibonacciSpiral(max_n, image_size)
+        return fwd_spiral.render_primes(point_size=point_size, use_gpu=use_gpu)
     elif spiral_type == "reverse":
-        spiral = ReverseFibonacciSpiral(max_n, image_size)
+        rev_spiral = ReverseFibonacciSpiral(max_n, image_size)
+        return rev_spiral.render_primes(point_size=point_size, use_gpu=use_gpu)
     elif spiral_type == "shell":
-        spiral = FibonacciShellPlot(max_n, image_size)
+        shell_plot = FibonacciShellPlot(max_n, image_size)
+        return shell_plot.render_primes(point_size=point_size, use_gpu=use_gpu)
     else:
         raise ValueError(f"Unknown spiral_type: {spiral_type}")
-
-    return spiral.render_primes(point_size=point_size, use_gpu=use_gpu)

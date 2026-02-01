@@ -4,7 +4,7 @@ Look for periodic patterns in primes beyond known modular structure.
 """
 
 import numpy as np
-from typing import Tuple, List, Dict, Optional, NamedTuple
+from typing import Tuple, List, Dict, Optional, NamedTuple, Any
 from dataclasses import dataclass
 from prime_plot.core.sieve import generate_primes_range
 
@@ -167,7 +167,7 @@ def multi_scale_analysis(
     scales: List[int],
     window_size: int = 100_000,
     significance_threshold: float = 5.0,
-) -> Dict[str, any]:
+) -> Dict[str, Any]:
     """Run frequency analysis at multiple scales to find consistent patterns.
 
     Args:
@@ -201,7 +201,7 @@ def multi_scale_analysis(
         periods = [p['period'] for p in all_unexplained]
 
         # Cluster similar periods
-        period_clusters = {}
+        period_clusters: Dict[float, List[Dict[str, Any]]] = {}
         for item in all_unexplained:
             period = item['period']
             # Find or create cluster
@@ -230,7 +230,7 @@ def multi_scale_analysis(
                     'avg_z_score': avg_z,
                 })
 
-        consistent_periods.sort(key=lambda x: x['scales_found'], reverse=True)
+        consistent_periods.sort(key=lambda x: int(x['scales_found']), reverse=True)
     else:
         consistent_periods = []
 
@@ -334,20 +334,16 @@ def deep_frequency_search(
     scales: List[int],
     window_size: int = 500_000,
     test_all_periods: bool = True,
-) -> Dict[str, any]:
+) -> Dict[str, Any]:
     """Deep search for exploitable frequency patterns.
 
     Tests ALL significant peaks for predictive power, not just unexplained ones.
     """
     from prime_plot.pipeline.residual_search import brute_force_search
 
-    results = {
-        'scales': scales,
-        'window_size': window_size,
-        'period_tests': [],
-        'best_period': None,
-        'best_improvement': 0.0,
-    }
+    period_tests: List[Dict[str, Any]] = []
+    best_period: Optional[float] = None
+    best_improvement: float = 0.0
 
     # Collect all periods to test
     all_periods = set()
@@ -376,20 +372,26 @@ def deep_frequency_search(
             num_primes=100,
         )
 
-        results['period_tests'].append({
+        period_tests.append({
             'period': period,
             'improvement': test_result['improvement'],
             'density_variance': test_result['density_variance'],
         })
 
-        if test_result['improvement'] > results['best_improvement']:
-            results['best_improvement'] = test_result['improvement']
-            results['best_period'] = period
+        if test_result['improvement'] > best_improvement:
+            best_improvement = test_result['improvement']
+            best_period = period
 
         if test_result['improvement'] > 1.05:
             print(f"  Period {period:.1f}: {test_result['improvement']:.2f}x improvement")
 
     # Sort by improvement
-    results['period_tests'].sort(key=lambda x: x['improvement'], reverse=True)
+    period_tests.sort(key=lambda x: float(x['improvement']), reverse=True)
 
-    return results
+    return {
+        'scales': scales,
+        'window_size': window_size,
+        'period_tests': period_tests,
+        'best_period': best_period,
+        'best_improvement': best_improvement,
+    }

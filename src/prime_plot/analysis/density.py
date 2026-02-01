@@ -110,7 +110,7 @@ def radial_density_profile(
     return radii, densities
 
 
-def theoretical_density(n: int) -> float:
+def theoretical_density(n: int | float) -> float:
     """Compute theoretical prime density at n using prime number theorem.
 
     The density of primes near n is approximately 1/ln(n).
@@ -123,7 +123,7 @@ def theoretical_density(n: int) -> float:
     """
     if n < 2:
         return 0.0
-    return 1.0 / np.log(n)
+    return float(1.0 / np.log(n))
 
 
 def density_ratio(

@@ -222,14 +222,14 @@ def detect_clusters(
     # Score based on cluster quality
     if clusters:
         # Good clustering = many well-defined clusters with consistent density
-        avg_density = np.mean([c.density for c in clusters])
-        density_consistency = 1 - np.std([c.density for c in clusters]) / (avg_density + 1e-6)
-        density_consistency = max(0, density_consistency)
+        avg_density = float(np.mean([c.density for c in clusters]))
+        density_consistency = 1 - float(np.std([c.density for c in clusters])) / (avg_density + 1e-6)
+        density_consistency = max(0.0, density_consistency)
 
         # Coverage = fraction of points in clusters
         total_points = binary.sum()
         clustered_points = sum(c.size for c in clusters)
-        coverage = clustered_points / total_points if total_points > 0 else 0
+        coverage = clustered_points / total_points if total_points > 0 else 0.0
 
         # Number of clusters (more = more structured, up to a point)
         num_score = min(len(clusters) / 20, 1.0)
@@ -239,7 +239,7 @@ def detect_clusters(
     else:
         score = 0.0
 
-    return clusters, score
+    return clusters, float(score)
 
 
 def compute_fft_spectrum(

@@ -51,7 +51,7 @@ class MultiVisualizationDataset(Dataset):
         block_size: int = 256,
         num_blocks: int = 100,
         start_range: tuple[int, int] = (1, 1_000_000),
-        methods: List[str] = None,
+        methods: Optional[List[str]] = None,
         transform: Callable | None = None,
         seed: int | None = None,
     ):
@@ -106,37 +106,37 @@ class MultiVisualizationDataset(Dataset):
             return viz.render_primes()
 
         elif method == 'primitive_root':
-            viz = PrimitiveRootPattern(max_n, image_size)
-            return viz.render_primes()
+            prim_root_viz = PrimitiveRootPattern(max_n, image_size)
+            return prim_root_viz.render_primes()
 
         elif method == 'modular_clock_6':
-            viz = ModularClock(max_n, 6, image_size)
-            return viz.render_primes(point_size=1)
+            clock6_viz = ModularClock(max_n, 6, image_size)
+            return clock6_viz.render_primes(point_size=1)
 
         elif method == 'modular_clock_30':
-            viz = ModularClock(max_n, 30, image_size)
-            return viz.render_primes(point_size=1)
+            clock30_viz = ModularClock(max_n, 30, image_size)
+            return clock30_viz.render_primes(point_size=1)
 
         elif method == 'digit_sum_modular':
-            viz = DigitSumModularPlot(max_n, image_size)
-            return viz.render_primes()
+            ds_viz = DigitSumModularPlot(max_n, image_size)
+            return ds_viz.render_primes()
 
         elif method == 'quadratic_residue_7x11':
-            viz = QuadraticResidueGrid(max_n, image_size, 7, 11)
-            return viz.render_primes()
+            qr_viz = QuadraticResidueGrid(max_n, image_size, 7, 11)
+            return qr_viz.render_primes()
 
         elif method == 'fermat_residue':
-            viz = FermatResidueSpiral(max_n, image_size)
-            return viz.render_primes()
+            fermat_viz = FermatResidueSpiral(max_n, image_size)
+            return fermat_viz.render_primes()
 
         elif method == 'collatz_steps':
-            viz = CollatzStepsPlot(max_n, image_size)
-            return viz.render_primes()
+            collatz_viz = CollatzStepsPlot(max_n, image_size)
+            return collatz_viz.render_primes()
 
         elif method == 'ulam':
             ulam_size = int(np.sqrt(max_n)) + 1
-            viz = UlamSpiral(min(ulam_size, image_size))
-            return viz.render_primes() * 255
+            ulam_viz = UlamSpiral(min(ulam_size, image_size))
+            return ulam_viz.render_primes() * 255
 
         else:
             raise ValueError(f"Unknown method: {method}")
@@ -213,7 +213,7 @@ class RegionalPredictionDataset(Dataset):
         block_size: int = 256,
         num_samples: int = 500,
         grid_size: int = 8,
-        methods: List[str] = None,
+        methods: Optional[List[str]] = None,
         start_range: tuple[int, int] = (1, 1_000_000),
         seed: int | None = None,
     ):
@@ -282,7 +282,7 @@ def create_multi_dataloader(
     num_blocks: int = 100,
     batch_size: int = 8,
     num_workers: int = 0,
-    methods: List[str] = None,
+    methods: Optional[List[str]] = None,
     start_range: tuple[int, int] = (1, 1_000_000),
     seed: int | None = None,
 ) -> DataLoader:

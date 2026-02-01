@@ -267,8 +267,9 @@ def compare_to_random_baseline(
     baseline_std = np.std(baseline_values)
 
     # How many standard deviations above baseline?
+    z_score: float
     if baseline_std > 0:
-        z_score = (actual_metrics.predictive_value - baseline_mean) / baseline_std
+        z_score = float((actual_metrics.predictive_value - baseline_mean) / baseline_std)
     else:
         z_score = 0.0 if actual_metrics.predictive_value == baseline_mean else float('inf')
 

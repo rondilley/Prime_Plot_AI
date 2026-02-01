@@ -6,6 +6,323 @@
 
 Prime_Plot_AI is a Python tool for visualizing prime number patterns and detecting primes using machine learning. The system supports 2D spiral visualizations (Ulam, Sacks, Klauber) and experimental 3D volumetric approaches.
 
+## High-Level System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Input["Input Layer"]
+        N[Integer Range N]
+        Config[Configuration]
+    end
+
+    subgraph Core["Core Processing"]
+        Sieve[Prime Sieve<br/>NumPy/primesieve]
+        Coords[Coordinate Mapping<br/>Ulam/Sacks/Vogel/etc]
+        Features[Feature Engineering<br/>21 channels]
+    end
+
+    subgraph Discovery["Autonomous Discovery"]
+        GA[Genetic Algorithm]
+        Genome[N-Dimensional Genome]
+        Dedup[Deduplication<br/>Param + Visual Hash]
+    end
+
+    subgraph Evaluation["Pattern Evaluation"]
+        PatternDet[Pattern Detection<br/>Gabor/FFT/Hough]
+        Residual[Residual Analysis]
+        Validation[Search Validation<br/>Miller-Rabin]
+    end
+
+    subgraph ML["Machine Learning"]
+        UNet[U-Net Model<br/>2D/3D]
+        Training[Training Pipeline]
+        Inference[Inference Engine]
+    end
+
+    subgraph Output["Output Layer"]
+        Images[Visualization Images]
+        Mosaics[Evaluation Mosaics]
+        Results[Discovery Results]
+        Primes[Found Primes]
+    end
+
+    N --> Sieve
+    Config --> Coords
+    Sieve --> Coords
+    Coords --> Features
+    Features --> UNet
+    UNet --> Inference
+    Inference --> Primes
+
+    Genome --> Coords
+    GA --> Genome
+    Genome --> Dedup
+    Dedup --> |unique| Evaluation
+
+    Coords --> PatternDet
+    PatternDet --> Residual
+    Residual --> Validation
+    Validation --> Results
+
+    UNet --> Training
+    Training --> UNet
+
+    PatternDet --> Images
+    Residual --> Mosaics
+```
+
+## Data Flow Pipeline
+
+```mermaid
+flowchart LR
+    subgraph Generation["1. Generation"]
+        A1[Prime Sieve] --> A2[Boolean Mask]
+        A2 --> A3[Prime Indices]
+    end
+
+    subgraph Mapping["2. Coordinate Mapping"]
+        B1[Integer n] --> B2{Curve Type}
+        B2 --> |Ulam| B3[Square Spiral]
+        B2 --> |Sacks| B4[Polar Spiral]
+        B2 --> |Vogel| B5[Golden Angle]
+        B2 --> |Hilbert| B6[Space-Filling]
+        B3 & B4 & B5 & B6 --> B7[x,y coordinates]
+    end
+
+    subgraph Features["3. Feature Engineering"]
+        C1[Position x,y,z]
+        C2[Modular: n mod 2,3,5,6,7...]
+        C3[Log value: ln n]
+        C4[Density hint: 1/ln n]
+        C5[Angles: theta_xy, theta_xz]
+        C1 & C2 & C3 & C4 & C5 --> C6[21-Channel Tensor]
+    end
+
+    subgraph Model["4. ML Processing"]
+        D1[U-Net Encoder] --> D2[Bottleneck]
+        D2 --> D3[U-Net Decoder]
+        D3 --> D4[Prime Probability Map]
+    end
+
+    subgraph Search["5. Prime Search"]
+        E1[Density Map] --> E2[Candidate Ranking]
+        E2 --> E3[Miller-Rabin Test]
+        E3 --> E4[Confirmed Primes]
+    end
+
+    A3 --> B1
+    B7 --> C1
+    C6 --> D1
+    D4 --> E1
+```
+
+## Autonomous Discovery Engine Architecture
+
+```mermaid
+flowchart TB
+    subgraph Init["Initialization"]
+        I1[Parse Arguments] --> I2[Create Run Directory]
+        I2 --> I3[Initialize Prime Sieve]
+        I3 --> I4[Create Populations]
+    end
+
+    subgraph Evolution["Evolution Cycle"]
+        E1[Generate/Mutate Genome]
+        E2{Param Fingerprint<br/>Duplicate?}
+        E3{Visual Hash<br/>Duplicate?}
+        E4[Evaluate Genome]
+        E5[Cache Results]
+
+        E1 --> E2
+        E2 --> |Yes| E6[Skip - Use Cached]
+        E2 --> |No| E3
+        E3 --> |Yes| E6
+        E3 --> |No| E4
+        E4 --> E5
+    end
+
+    subgraph Evaluate["Genome Evaluation"]
+        V1[Compute Coordinates]
+        V2[Render Grid]
+        V3[Detect Patterns]
+        V4[Compute Residual]
+        V5[Test Extension]
+        V6[Search Validation]
+
+        V1 --> V2 --> V3 --> V4 --> V5 --> V6
+    end
+
+    subgraph Output["Output Generation"]
+        O1[3-Panel Comparison Image]
+        O2[Save to Image Cache]
+        O3[Update Mosaic]
+        O4[Log Results]
+    end
+
+    subgraph Validation["Multi-Scale Validation"]
+        MS1[15K Scale Test]
+        MS2[1M Scale Test]
+        MS3[100M Scale Test]
+        MS4[2B Scale Test]
+        MS1 --> MS2 --> MS3 --> MS4
+    end
+
+    Init --> Evolution
+    E4 --> Evaluate
+    Evaluate --> Output
+    V6 --> |Interesting| Validation
+```
+
+## Pattern Detection Pipeline
+
+```mermaid
+flowchart TB
+    subgraph Input["Input Image"]
+        I1[Prime Grid<br/>Binary 2D/3D]
+    end
+
+    subgraph Detection["Multi-Method Detection"]
+        D1[Gabor Filters<br/>8 orientations]
+        D2[FFT Analysis<br/>Periodic patterns]
+        D3[Hough Transform<br/>Line detection]
+        D4[Cluster Detection<br/>Connected components]
+        D5[3D Directional<br/>16 kernels]
+    end
+
+    subgraph Consensus["Pattern Consensus"]
+        C1{2+ Methods<br/>Agree?}
+        C2[Known Pattern Mask]
+        C3[Unknown Residual]
+    end
+
+    subgraph Metrics["Quality Metrics"]
+        M1[Pattern Fraction]
+        M2[Residual Exploitability]
+        M3[Density Variance Ratio]
+        M4[Transfer Correlation]
+    end
+
+    I1 --> D1 & D2 & D3 & D4 & D5
+    D1 & D2 & D3 & D4 & D5 --> C1
+    C1 --> |Yes| C2
+    C1 --> |No| C3
+    C2 & C3 --> M1 & M2 & M3 & M4
+```
+
+## Deduplication System
+
+```mermaid
+flowchart TB
+    subgraph Genome["New Genome"]
+        G1[Parameters]
+    end
+
+    subgraph ParamDedup["Parameter Deduplication"]
+        P1[Generate Fingerprint<br/>precision=1]
+        P2[Round Coefficients]
+        P3[Round Bases to 5s]
+        P4{In Cache?}
+    end
+
+    subgraph VisualDedup["Visual Deduplication"]
+        V1[Quick Render]
+        V2[Compute pHash<br/>16x16 average]
+        V3[Compare to Cache<br/>Hamming distance]
+        V4{Similarity > 95%?}
+    end
+
+    subgraph Action["Action"]
+        A1[Skip - Use Cached Fitness]
+        A2[Full Evaluation]
+        A3[Add to Both Caches]
+    end
+
+    G1 --> P1 --> P2 --> P3 --> P4
+    P4 --> |Yes| A1
+    P4 --> |No| V1 --> V2 --> V3 --> V4
+    V4 --> |Yes| A1
+    V4 --> |No| A2 --> A3
+```
+
+## ML Model Architecture (U-Net)
+
+```mermaid
+flowchart TB
+    subgraph Encoder["Encoder Path"]
+        E1[Input: 21 channels<br/>256x256]
+        E2[Conv 64 + Pool]
+        E3[Conv 128 + Pool]
+        E4[Conv 256 + Pool]
+        E5[Conv 512 + Pool]
+        E1 --> E2 --> E3 --> E4 --> E5
+    end
+
+    subgraph Bottleneck["Bottleneck"]
+        B1[Conv 1024]
+    end
+
+    subgraph Decoder["Decoder Path"]
+        D1[UpConv + Skip 512]
+        D2[UpConv + Skip 256]
+        D3[UpConv + Skip 128]
+        D4[UpConv + Skip 64]
+        D5[Output: 1 channel<br/>Prime probability]
+        D1 --> D2 --> D3 --> D4 --> D5
+    end
+
+    subgraph Skip["Skip Connections"]
+        S1[Copy E2 to D4]
+        S2[Copy E3 to D3]
+        S3[Copy E4 to D2]
+        S4[Copy E5 to D1]
+    end
+
+    E5 --> B1 --> D1
+    E2 -.-> D4
+    E3 -.-> D3
+    E4 -.-> D2
+    E5 -.-> D1
+```
+
+## Prime Search Strategy
+
+```mermaid
+flowchart TB
+    subgraph Methods["Search Methods"]
+        M1[Polynomial-First<br/>1.8x faster]
+        M2[Modular Search<br/>1.37x faster]
+        M3[Stacked Search<br/>1.46x faster]
+    end
+
+    subgraph Polynomial["Polynomial-First"]
+        P1[Euler: n^2+n+41]
+        P2[Legendre: 2n^2+29]
+        P3[Fung-Ruby: n^2+n+17]
+        P4[Test polynomial values first]
+    end
+
+    subgraph Modular["Modular Search"]
+        R1[Build density map<br/>mod 7,11,13,17,19,23]
+        R2[Score candidates by position]
+        R3[Test high-density first]
+    end
+
+    subgraph Stacked["Stacked Search"]
+        S1[Combine Modular + Gap]
+        S2[Gap autocorrelation]
+        S3[Skip after small gap]
+    end
+
+    subgraph Fallback["Fallback"]
+        F1[Wheel-filtered sequential]
+    end
+
+    M1 --> P1 & P2 & P3 --> P4
+    M2 --> R1 --> R2 --> R3
+    M3 --> S1 --> S2 --> S3
+    P4 & R3 & S3 --> F1
+```
+
 ## Directory Structure
 
 ```
@@ -543,6 +860,31 @@ logging.FileHandler(run_dir / 'logs' / 'run.log')
 
 # Checkpoint saves on shutdown or error
 run.save_checkpoint(state, f"discovery_{counter:04d}")
+```
+
+### Critical Bug Fixes (Feb 2026)
+
+**Pattern Detection Threshold Bug:**
+
+The 3-panel visualization was showing incorrect results because pattern detection used `> 0.5` threshold on normalized grids. When grids are normalized by dividing by max count:
+- A pixel with 1 prime (count=1) when max count is 3 becomes value 0.33
+- The `> 0.5` threshold missed this pixel entirely
+
+This caused:
+- ORIGINAL panel to show many primes (using `grid * 255` which makes small values visible)
+- KNOWN PATTERNS + RESIDUAL to show far fewer primes (using `> 0.5` threshold)
+
+**Fix:** Changed all threshold checks from `> 0.5` to `> 0`:
+- `run_autonomous_discovery.py`: 5 locations
+- `enhanced_detection.py`: 12 locations
+
+**Logarithmic Spiral Overflow:**
+
+The `logarithmic_coords` function computed `r = a * np.exp(b * theta)` where for large n (e.g., 100000), `b * theta` exceeded 700 causing overflow. Fixed by clamping exponent before exp():
+
+```python
+exponent = min(b * theta, 700.0)  # exp(700) ~ 1e304, max float
+r = a * np.exp(exponent)
 ```
 
 ### Usage

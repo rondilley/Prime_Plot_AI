@@ -6,6 +6,72 @@ A comprehensive chronological analysis of all experimental outputs, including vi
 
 **Note:** References to academic papers are cited as [Author Year] and listed in the [References](#references) section at the end.
 
+## Experiment Pipeline Overview
+
+```mermaid
+flowchart TB
+    subgraph Phase1["Phase 1: Initial Visualization"]
+        V1[Ulam Spiral]
+        V2[Sacks Spiral]
+        V3[Klauber Triangle]
+        V1 & V2 & V3 --> M1[Visual Pattern Observation]
+    end
+
+    subgraph Phase2["Phase 2: ML Training"]
+        T1[Feature Engineering<br/>1-17 channels]
+        T2[U-Net Training<br/>Focal + F1 Loss]
+        T3[Inference Testing]
+        T1 --> T2 --> T3
+    end
+
+    subgraph Phase3["Phase 3: 3D Experiments"]
+        D1[Stacked 2D]
+        D2[True 3D Cubic]
+        D3[21-Channel Features]
+        D1 & D2 --> D3
+    end
+
+    subgraph Phase4["Phase 4: Scale Analysis"]
+        S1[100K Scale]
+        S2[10M Scale]
+        S3[1B Scale]
+        S1 --> S2 --> S3
+    end
+
+    subgraph Phase5["Phase 5: Discovery"]
+        E1[Evolutionary Search]
+        E2[Linear Genome]
+        E3[Autonomous Discovery]
+        E1 --> E2 --> E3
+    end
+
+    Phase1 --> Phase2 --> Phase3 --> Phase4 --> Phase5
+```
+
+## Key Findings Summary
+
+```mermaid
+flowchart LR
+    subgraph Patterns["Visual Patterns"]
+        P1[Ulam Diagonals = Polynomials]
+        P2[75%+ is known math]
+        P3[Residuals rarely extend]
+    end
+
+    subgraph Search["Prime Search"]
+        S1[Polynomial-first: 1.8x]
+        S2[Modular: 1.37x]
+        S3[Stacked: 1.46x]
+    end
+
+    subgraph Lesson["Key Lesson"]
+        L1[Pattern appearance<br/>does NOT equal<br/>search improvement]
+    end
+
+    Patterns --> Lesson
+    Search --> Lesson
+```
+
 ## Table of Contents
 
 1. [Initial Visualizations (Jan 25, 10:12 AM)](#1-initial-visualizations)
@@ -1167,5 +1233,101 @@ output/runs/{timestamp}_discovery_autonomous_{D}D/
 1. **Visual auditing is essential** - Without saved images, there's no way to verify pattern detection quality
 2. **Multi-method detection** - Single-method detection misses patterns visible in different representations
 3. **Graceful shutdown** - Long runs need proper signal handling to save state
-4. **Memory monitoring** - 3D grids can use significant memory (30MB+ for 200³)
+4. **Memory monitoring** - 3D grids can use significant memory (30MB+ for 200^3)
 5. **Expert verification** - The mosaic enables quick human review of thousands of evaluations
+
+---
+
+## 17. Critical Bug Fixes
+
+**Date:** February 1, 2026
+
+### Pattern Detection Threshold Bug
+
+A critical bug was discovered in the pattern detection and 3-panel visualization system. The bug caused the KNOWN PATTERNS and RESIDUAL panels to show far fewer primes than the ORIGINAL panel.
+
+**Root Cause:**
+
+When grids are normalized (divided by max count), pixels with single primes get low values. For example:
+- Pixel with 1 prime, max count of 3: value = 0.33
+- Pixel with 2 primes, max count of 3: value = 0.67
+
+The code used `> 0.5` threshold to identify primes:
+```python
+# OLD (buggy)
+binary = (prime_grid > 0.5).astype(np.float32)
+```
+
+This missed any pixel with value <= 0.5, which could be the majority of primes in sparse visualizations.
+
+**Visual Symptoms:**
+- ORIGINAL panel: Dense pattern of primes (using `grid * 255` which makes even small values visible)
+- KNOWN PATTERNS panel: Small cluster of red dots (only high-density pixels detected)
+- RESIDUAL panel: Small cluster of white dots (should equal ORIGINAL minus KNOWN)
+
+**Fix:**
+
+Changed all threshold checks from `> 0.5` to `> 0`:
+
+```python
+# NEW (fixed)
+binary = (prime_grid > 0).astype(np.float32)
+```
+
+**Files Modified:**
+- `run_autonomous_discovery.py` (5 locations)
+- `src/prime_plot/analysis/enhanced_detection.py` (12 locations)
+
+### Logarithmic Spiral Overflow
+
+The `logarithmic_coords` function in the autonomous discovery engine produced overflow warnings:
+
+```
+RuntimeWarning: overflow encountered in exp
+  r = a * np.exp(b * theta)
+```
+
+**Root Cause:**
+
+For large n (e.g., n=100000):
+- theta = n * 0.05 = 5000
+- b * theta = 0.1 * 5000 = 500
+- exp(500) exceeds float64 max (~1.8e308)
+
+**Fix:**
+
+Clamp exponent before calling exp():
+
+```python
+exponent = min(b * theta, 700.0)  # exp(700) ~ 1e304, safely below max float
+r = a * np.exp(exponent)
+```
+
+### Type Checking Fixes
+
+Fixed 60+ mypy type errors across the codebase:
+
+| Issue Type | Count | Example Fix |
+|------------|-------|-------------|
+| Optional parameters | 15 | `seed: int = None` -> `seed: Optional[int] = None` |
+| Variable type conflicts | 12 | Renamed `viz` to `grid_viz`, `clock_viz`, etc. |
+| Union types | 8 | `self.up: Union[nn.Upsample, nn.ConvTranspose2d]` |
+| None multiplication | 5 | Separated calculation from Optional typing |
+| Missing type annotations | 20 | Added `List[]`, `Dict[]`, `Tuple[]` |
+
+All 155 tests pass after fixes.
+
+### Key Insight
+
+**The 3-panel visualization must satisfy a conservation law:**
+
+```
+ORIGINAL = KNOWN PATTERNS + RESIDUAL
+```
+
+If the panels don't add up, there's a bug in either:
+1. How the original is rendered
+2. How the pattern mask is computed
+3. How the mask is applied to create known/residual panels
+
+The threshold bug violated this law by using different effective thresholds for the original (any value > 0 becomes visible when multiplied by 255) versus the pattern/residual computation (> 0.5 threshold).
